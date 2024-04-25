@@ -93,7 +93,17 @@ private:
         }
     }
 
+    void delete_same(Set& tree, Node* node) {
+        if (node) {
+            delete_same(tree, node->left);
+            if (tree.contains(node->key)) tree.erase(node->key);
+            delete_same(tree, node->right);
+        }
+    }
 public:
+    Node*& get_root() {
+        return root;
+    }
     Set() : root(nullptr) {}
 
     Set(const Set& other) : root(nullptr) {
@@ -135,5 +145,16 @@ public:
         bool result = contains(key);
         erase_helper(root, key);
         return result;
+    }
+
+    Set intersection(Set& lhs, Set& rhs) {
+        Set dif = difference(lhs, rhs);
+        return difference(lhs, dif);
+    }
+
+    Set difference(Set& lhs, Set& rhs) {
+        Set dif(lhs);
+        delete_same(dif, rhs.get_root());
+        return dif;
     }
 };
