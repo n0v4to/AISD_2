@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-class MySet {
+class Set {
 private:
     struct Node {
         int key;
@@ -13,63 +13,63 @@ private:
 
     Node* root;
 
-    void copyHelper(Node*& newNode, Node* originalNode) {
-        if (originalNode) {
-            newNode = new Node(originalNode->key);
-            copyHelper(newNode->left, originalNode->left);
-            copyHelper(newNode->right, originalNode->right);
+    void copy_helper(Node*& newNode, Node* original_node) {
+        if (original_node) {
+            newNode = new Node(original_node->key);
+            copy_helper(newNode->left, original_node->left);
+            copy_helper(newNode->right, original_node->right);
         }
     }
 
-    void printHelper(Node* node) {
+    void print_helper(Node* node) {
         if (node) {
-            printHelper(node->left);
+            print_helper(node->left);
             std::cout << node->key << " ";
-            printHelper(node->right);
+            print_helper(node->right);
         }
     }
 
-    bool insertHelper(Node*& node, int key) {
+    bool insert_helper(Node*& node, int key) {
         if (!node) {
             node = new Node(key);
             return true;
         }
 
         if (key < node->key) {
-            return insertHelper(node->left, key);
+            return insert_helper(node->left, key);
         }
         else if (key > node->key) {
-            return insertHelper(node->right, key);
+            return insert_helper(node->right, key);
         }
 
-        return false; // элемент уже существует
+        return false;
     }
 
-    bool containsHelper(Node* node, int key) {
+    bool contains_helper(Node* node, int key) {
         if (!node) {
             return false;
         }
 
         if (key < node->key) {
-            return containsHelper(node->left, key);
+            return contains_helper(node->left, key);
         }
         else if (key > node->key) {
-            return containsHelper(node->right, key);
+            return contains_helper(node->right, key);
         }
 
-        return true; // элемент найден
+        return true;
     }
 
-    void eraseHelper(Node*& node, int key) {
+    void erase_helper(Node*& node, int key) {
         if (!node) {
             return;
         }
 
         if (key < node->key) {
-            eraseHelper(node->left, key);
+            erase_helper(node->left, key);
         }
         else if (key > node->key) {
-            eraseHelper(node->right, key);
+            erase_helper(node->right, key);
         }
         else {
             if (!node->left) {
@@ -88,45 +88,52 @@ private:
                     temp = temp->left;
                 }
                 node->key = temp->key;
-                eraseHelper(node->right, temp->key);
+                erase_helper(node->right, temp->key);
             }
         }
     }
 
 public:
-    MySet() : root(nullptr) {}
+    Set() : root(nullptr) {}
 
-    MySet(const MySet& other) : root(nullptr) {
-        copyHelper(root, other.root);
+    Set(const Set& other) : root(nullptr) {
+        copy_helper(root, other.root);
     }
 
-    ~MySet() {
-        // реализация деструктора
+    ~Set() {
+        while (root) {
+            erase(root->key);
+        }
     }
 
-    MySet& operator=(const MySet& other) {
+    Set& operator=(const Set& other) {
         if (this != &other) {
-            // реализация оператора присваивания
+            if (root) {
+                while (root) {
+                    erase(root->key);
+                }
+            }
+            copy_helper(root, other.root);
         }
         return *this;
     }
 
     void print() {
-        printHelper(root);
+        print_helper(root);
         std::cout << std::endl;
     }
 
     bool insert(int key) {
-        return insertHelper(root, key);
+        return insert_helper(root, key);
     }
 
     bool contains(int key) {
-        return containsHelper(root, key);
+        return contains_helper(root, key);
     }
 
     bool erase(int key) {
         bool result = contains(key);
-        eraseHelper(root, key);
+        erase_helper(root, key);
         return result;
     }
 };
