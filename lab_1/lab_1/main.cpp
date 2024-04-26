@@ -2,15 +2,15 @@
 #include "tree.h"
 
 int main() {
-	measure_fill_time();
+	/*measure_fill_time();
 	measure_search_time();
 	measure_add_remove_time();
 	std::cout << "\n" << std::endl;
 	measure_fill_time_vector();
 	measure_search_time_vector();
-	measure_add_remove_time_vector();
+	measure_add_remove_time_vector();*/
 
-	/*Set set1;
+	Set set1;
 	set1.insert(1);
 	set1.insert(2);
 	set1.insert(3);
@@ -38,5 +38,5 @@ int main() {
 	
 	Set inter = set2.intersection(set1, set2);
 	std::cout << "Intersection:" << "\n";
-	inter.print();*/
+	inter.print();
 }

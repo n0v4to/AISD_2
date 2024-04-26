@@ -24,7 +24,7 @@
     <ClInclude Include="tree.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main_tests_time.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

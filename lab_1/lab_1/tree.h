@@ -104,6 +104,7 @@ public:
     Node*& get_root() {
         return root;
     }
+
     Set() : root(nullptr) {}
 
     Set(const Set& other) : root(nullptr) {
