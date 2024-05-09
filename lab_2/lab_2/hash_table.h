@@ -16,6 +16,7 @@ class HashTable {
 	};
 	std::vector<std::list<Pair>> _data;
 	size_t _size;
+	size_t _collisions;
 	size_t hash_function(const K& key) {
 		return key % _size;
 	}
@@ -35,10 +36,23 @@ public:
 	}
 	HashTable(const HashTable& other): _size(other._size), _data(other._data) {}
 	~HashTable() {}
-	HashTable& operator=(const HashTable& other) {
+	/*HashTable& operator=(const HashTable& other) {
 		if (this != other) {
 			_size = other._size;
 			_data = other._data;
+		}
+		return *this;
+	}*/
+	HashTable& operator=(const HashTable& other) {
+		if (this != &other) {
+			_size = other._size;
+			_data.clear();
+			_data.resize(other._data.size());
+			for (size_t i = 0; i < other._data.size(); ++i) {
+				for (const auto& pair : other._data[i]) {
+					_data[i].push_back(pair);
+				}
+			}
 		}
 		return *this;
 	}
@@ -53,6 +67,12 @@ public:
 	}
 	void insert(K key, V value) {
 		size_t index = hash_function(key);
+		for (auto& pair : _data[index]) {
+			if (pair.key == key) {
+				_collisions++;
+				break;
+			}
+		}
 		_data[index].push_back(Pair(key, value));
 	}
 	void insert_or_assign(K key, V value) {
@@ -61,6 +81,12 @@ public:
 			if (pair.key == key) {
 				pair.value = value;
 				return;
+			}
+		}
+		for (auto& pair : _data[index]) {
+			if (pair.key == key) {
+				_collisions++;
+				break;
 			}
 		}
 		_data[index].push_back(Pair(key, value));
@@ -103,5 +129,8 @@ public:
 			}
 		}
 		return count;
+	}
+	size_t get_collisions() const {
+		return _collisions;
 	}
 };
