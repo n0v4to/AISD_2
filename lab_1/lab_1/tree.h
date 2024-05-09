@@ -13,11 +13,11 @@ private:
 
     Node* root;
 
-    void copy_helper(Node*& newNode, Node* original_node) {
+    void copy_helper(Node*& new_node, Node* original_node) {
         if (original_node) {
-            newNode = new Node(original_node->key);
-            copy_helper(newNode->left, original_node->left);
-            copy_helper(newNode->right, original_node->right);
+            new_node = new Node(original_node->key);
+            copy_helper(new_node->left, original_node->left);
+            copy_helper(new_node->right, original_node->right);
         }
     }
 
