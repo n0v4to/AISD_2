@@ -36,13 +36,6 @@ public:
 	}
 	HashTable(const HashTable& other): _size(other._size), _data(other._data) {}
 	~HashTable() {}
-	/*HashTable& operator=(const HashTable& other) {
-		if (this != other) {
-			_size = other._size;
-			_data = other._data;
-		}
-		return *this;
-	}*/
 	HashTable& operator=(const HashTable& other) {
 		if (this != &other) {
 			_size = other._size;
@@ -81,12 +74,6 @@ public:
 			if (pair.key == key) {
 				pair.value = value;
 				return;
-			}
-		}
-		for (auto& pair : _data[index]) {
-			if (pair.key == key) {
-				_collisions++;
-				break;
 			}
 		}
 		_data[index].push_back(Pair(key, value));
