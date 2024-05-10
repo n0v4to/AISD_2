@@ -15,14 +15,13 @@ class HashTable {
 		Pair(const K& key, const V& value) : key(key), value(value), not_empty(true) {}
 	};
 	std::vector<std::list<Pair>> _data;
-	size_t _size;
 	size_t _collisions;
 	size_t hash_function(const K& key) {
-		return key % _size;
+		return key % _data.size();
 	}
 public:
-	HashTable(size_t size): _size(size), _data(size) {}
-	HashTable(size_t size, size_t num_elements) : _size(size), _data(size) {
+	HashTable(size_t size): _data(size) {}
+	HashTable(size_t size, size_t num_elements): _data(size) {
 		std::random_device rd;
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<K> distrib_key(0, size - 1);
@@ -34,11 +33,10 @@ public:
 			insert(key, value);
 		}
 	}
-	HashTable(const HashTable& other): _size(other._size), _data(other._data) {}
+	HashTable(const HashTable& other): _data(other._data) {}
 	~HashTable() {}
 	HashTable& operator=(const HashTable& other) {
 		if (this != &other) {
-			_size = other._size;
 			_data.clear();
 			_data.resize(other._data.size());
 			for (size_t i = 0; i < other._data.size(); ++i) {
@@ -50,7 +48,7 @@ public:
 		return *this;
 	}
 	void print() {
-		for (size_t i = 0; i < _size; ++i) {
+		for (size_t i = 0; i < _data.size(); ++i) {
 			std::cout << "Bucket " << i << ": ";
 			for (const auto& pair : _data[i]) {
 				std::cout << pair.key << " -> " << pair.value << "; ";
@@ -60,10 +58,10 @@ public:
 	}
 	void insert(K key, V value) {
 		size_t index = hash_function(key);
+		if (_data[index].size()) _collisions++;
 		for (auto& pair : _data[index]) {
 			if (pair.key == key) {
-				_collisions++;
-				break;
+				return;
 			}
 		}
 		_data[index].push_back(Pair(key, value));
@@ -108,14 +106,8 @@ public:
 		return false;
 	}
 	int count(K key) {
-		size_t index = hash_function(key);
-		int count = 0;
-		for (const auto& pair : _data[index]) {
-			if (pair.key == key) {
-				count++;
-			}
-		}
-		return count;
+		size_t index = hash_function(key);		
+		return _data[index].size();
 	}
 	size_t get_collisions() const {
 		return _collisions;
