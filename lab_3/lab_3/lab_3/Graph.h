@@ -1,15 +1,57 @@
 #pragma once
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <queue>
+#include <limits>
+
+
 template<typename Vertex, typename Distance = double>
 class Graph {
 public:
-    struct Edge {/*...*/ }
+    struct Edge {
+        Vertex from;
+        Vertex to;
+        Distance distance;
+        
+        Edge(const Vertex& f, const Vertex& t, const Distance& d) : from(f), to(t), distance(d) {}
+    }
 
 
     //проверка-добавление-удаление вершин
-    bool has_vertex(const Vertex& v) const;
-    void add_vertex(const Vertex& v);
-    bool remove_vertex(const Vertex& v);
-    std::vector<Vertex> vertices() const;
+    bool has_vertex(const Vertex& v) const {
+        return adjacency_list.find(v) != adjacency_list.end();
+    }
+
+    void add_vertex(const Vertex& v) {
+        if (!has_vertex(v)) {
+            adjacency_list[v] = std::vector<Edge>();
+        }
+    }
+
+    bool remove_vertex(const Vertex& v) {
+        if (!has_vertex(v)) {
+            return false;
+        }
+
+        adjacency_list.erase(v);
+
+        for (auto& pair : adjacency_list) {
+            auto& edges = pair.second;
+            edges.erase(std::remove_if(edges.begin(), edges.end(),
+                [v](const Edge& e) { return e.to == v; }), edges.end());
+        }
+
+        return true;
+    }
+
+    std::vector<Vertex> vertices() const {
+        std::vector<Vertex> result;
+        for (const auto& pair : adjacency_list) {
+            result.push_back(pair.first);
+        }
+        return result;
+    }
 
 
     //проверка-добавление-удаление ребер
