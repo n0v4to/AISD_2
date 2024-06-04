@@ -1,9 +1,13 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <unordered_set>
 #include <unordered_map>
 #include <queue>
 #include <limits>
+
+#define EPSILON 1e-10
+#define INF 1e9
 
 
 template<typename Vertex, typename Distance = double>
@@ -13,30 +17,36 @@ public:
         Vertex from;
         Vertex to;
         Distance distance;
-        
+
         Edge(const Vertex& f, const Vertex& t, const Distance& d) : from(f), to(t), distance(d) {}
-    }
+    };
 
-
+private:
+    std::vector<Vertex> _vertices;
+    std::unordered_map<Vertex, std::vector<Edge>> _edges;
+public:
     //проверка-добавление-удаление вершин
     bool has_vertex(const Vertex& v) const {
-        return adjacency_list.find(v) != adjacency_list.end();
+        return std::find(_vertices.begin(), _vertices.end(), v) != _vertices.end();
     }
 
     void add_vertex(const Vertex& v) {
         if (!has_vertex(v)) {
-            adjacency_list[v] = std::vector<Edge>();
+            _vertices.push_back(v);
+            _edges[v] = std::vector<Edge>();
         }
     }
 
     bool remove_vertex(const Vertex& v) {
-        if (!has_vertex(v)) {
+        auto it = std::find(_vertices.begin(), _vertices.end(), v);
+        if (it == _vertices.end()) {
             return false;
         }
 
-        adjacency_list.erase(v);
+        _vertices.erase(it);
+        _edges.erase(v);
 
-        for (auto& pair : adjacency_list) {
+        for (auto& pair : _edges) {
             auto& edges = pair.second;
             edges.erase(std::remove_if(edges.begin(), edges.end(),
                 [v](const Edge& e) { return e.to == v; }), edges.end());
@@ -46,11 +56,7 @@ public:
     }
 
     std::vector<Vertex> vertices() const {
-        std::vector<Vertex> result;
-        for (const auto& pair : adjacency_list) {
-            result.push_back(pair.first);
-        }
-        return result;
+        return _vertices;
     }
 
 
@@ -60,46 +66,47 @@ public:
             return;
         }
 
-        adjacency_list[from].push_back(Edge(from, to, d))
+        _edges[from].push_back(Edge(from, to, d));
     }
 
     bool remove_edge(const Vertex& from, const Vertex& to) {
-        if (!has_vertex(from) || !has_vertex(to)) {
+        if (!has_edge(from, to))
             return false;
-        }
+        auto& edges = _edges.at(from);
 
-        auto& edges = adjacency_list[from];
-        auto it = std::remove_if(edges.begin(), edges.end(),
-            [to](const Edge& e) { return e.to == to; });
+        edges.erase(std::remove_if(edges.begin(), edges.end(), [&](const Edge& e) { return (e.from == from) && (e.to == to); }), edges.end());
 
-        if (it != edges.end()) {
-            edges.erase(it, edges.end());
-            return true;
-        }
-
-        return false;
+        return true;    
     }
 
     bool remove_edge(const Edge& e) {
-        return remove_edge(e.from, e.to);
+        if (!has_edge(e))
+            return false;
+        auto& edges = _edges.at(e.from);
+
+        edges.erase(std::remove_if(edges.begin(), edges.end(), [e](const Edge& edge)
+            { return (e.from == edge.from) && (e.to == edge.to) && (e.distance == edge.distance); }), edges.end());
+
+        return true;
     } //c учетом расстояния
 
     bool has_edge(const Vertex& from, const Vertex& to) const {
-        if (!has_vertex(from)) {
-            return false;
-        }
-
-        for (const auto& edge : adjacency_list.at(from)) {
-            if (edge.to == to) {
-                return true;
+        for (const auto& edges : _edges) {
+            for (const auto& edge : edges.second) {
+                if (edge.from == from && edge.to == to) {
+                    return true;
+                }
             }
         }
-
         return false;
     }
 
     bool has_edge(const Edge& e) const {
-        return has_edge(e.from, e.to);
+        auto& edges = _edges.at(e.from);
+        for (const auto& edge : edges)
+            if (edge.to == e.to && std::abs(edge.weight - e.weight) < EPSILON)
+                return true;
+        return false;
     } //c учетом расстояния в Edge
 
     //получение всех ребер, выходящих из вершины
@@ -108,19 +115,23 @@ public:
             return std::vector<Edge>();
         }
 
-        return adjacency_list.at(vertex);
+        return _edges.at(vertex);
     }
 
     size_t order() const {
-        return adjacency_list.size();
+        return _vertices.size();
     }//порядок
 
     size_t degree(const Vertex& v) const {
-        if (!has_vertex(v)) {
-            return 0;
+        size_t count = 0;
+        for (const auto& edges : _edges) {
+            for (const auto& edge : edges.second) {
+                if (edge.from == v || edge.to == v) {
+                    count++;
+                }
+            }
         }
-
-        return adjacency_list.at(v).size();
+        return count;
     } //степень вершины
 
 
@@ -129,40 +140,52 @@ public:
         std::unordered_map<Vertex, Distance> distance;
         std::unordered_map<Vertex, Vertex> predecessor;
 
-        for (const auto& pair : adjacency_list) {
-            distance[pair.first] = std::numeric_limits<Distance>::max();
-            predecessor[pair.first] = pair.first;
+        for (const auto& v : _vertices) {
+            distance[v] = INF;
         }
-
         distance[from] = 0;
 
-        for (size_t i = 0; i < order() - 1; ++i) {
-            for (const auto& pair : adjacency_list) {
-                const Vertex& u = pair.first;
-                for (const Edge& edge : pair.second) {
-                    const Vertex& v = edge.to;
-                    Distance new_distance = distance[u] + edge.distance;
-                    if (new_distance < distance[v]) {
-                        distance[v] = new_distance;
-                        predecessor[v] = u;
+        for (size_t i = 0; i < _vertices.size() - 1; ++i) {
+            for (const auto& vertex : _vertices) {
+                for (const auto& edge : _edges.at(vertex)) {
+                    if (distance[edge.from] + edge.distance < distance[edge.to]) {
+                        distance[edge.to] = distance[edge.from] + edge.distance;
+                        predecessor[edge.to] = edge.from;
                     }
                 }
             }
         }
 
-        std::vector<Edge> path;
-        for (Vertex v = to; v != from; v = predecessor[v]) {
-            Vertex u = predecessor[v];
-            for (const Edge& edge : adjacency_list[u]) {
-                if (edge.to == v) {
-                    path.push_back(edge);
-                    break;
+        for (const auto& vertex : _vertices) {
+            for (const auto& edge : _edges.at(vertex)) {
+                if (distance[edge.from] + edge.distance < distance[edge.to]) {
+                    throw std::runtime_error("Отрицательный цикл обнаружен");
                 }
             }
         }
 
+        std::vector<Edge> path;
+        Vertex cur = to;
+        while (cur != from) {
+            for (const auto& edge : _edges.at(predecessor[cur])) {
+                if (edge.to == cur) {
+                    path.push_back(edge);
+                    break;
+                }
+            }
+            cur = predecessor[cur];
+        }
         std::reverse(path.begin(), path.end());
         return path;
+    }
+
+    Distance length_shortest_path(const Vertex& from, const Vertex& to) const {
+        std::vector<Edge> edges = shortest_path(from, to);
+        Distance len = 0;
+        for (const auto& edge : edges) {
+            len += edge.distance;
+        }
+        return len;
     }
 
     //обход
@@ -179,9 +202,41 @@ public:
         visited.insert(current_vertex);
         result.push_back(current_vertex);
 
-        for (const Edge& edge : adjacency_list.at(current_vertex)) {
+        for (const Edge& edge : _edges.at(current_vertex)) {
             if (visited.find(edge.to) == visited.end()) {
                 depth_first_search(edge.to, visited, result);
+            }
+        }
+    }
+
+    Vertex find_optimal_warehouse() const {
+        Distance min_max_distance = std::numeric_limits<Distance>::max();
+        Vertex optimal_warehouse;
+
+        for (const auto& pair : vertices()) {
+            Distance max_distance = 0;
+
+            for (const auto& pair2 : vertices()) {
+                if (pair != pair2) {
+                    Distance distance = length_shortest_path(pair, pair2);
+                    max_distance = std::max(max_distance, distance);
+                }
+            }
+
+            if (max_distance < min_max_distance) {
+                min_max_distance = max_distance;
+                optimal_warehouse = pair;
+            }
+        }
+
+        return optimal_warehouse;
+    }
+
+    void print_edges() const {
+        std::cout << "Edges: " << std::endl;
+        for (const Vertex& vertex : _vertices) {
+            for (const Edge& edge : _edges.at(vertex)) {
+                std::cout << edge.from << " -> " << edge.to << "(" << edge.distance << ")" << std::endl;
             }
         }
     }
